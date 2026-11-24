@@ -153,24 +153,39 @@ def classify_group(name: str, rules: List[Tuple[str, str]]) -> str:
     return "📂其他频道"
 
 def normalize_name(name: str) -> str:
-    n = name.strip().lower()
+    """CCTV1 / CCTV-1 / CCTV-1 HD / CCTV1综合 → 同一键；CCTV+1 单独；CCTV5+ 单独"""
+    raw = name.strip()
+    n = raw.lower()
+    n = re.sub(r"\[.*?\]", "", n)                 # [Not 24/7]
+    n = re.sub(r"[\(（].*?[\)）]", "", n)         # (1080p)
     n = re.sub(r"[\s\-_·•]+", "", n)
-    n = re.sub(r"[\(（].*?[\)）]", "", n)
-    n = re.sub(r"(hd|sd|4k|8k|fhd|uhd|1080p|720p|576i|1080i)$", "", n, flags=re.I)
-    repl = {
-        "中央一套": "cctv1", "中央一台": "cctv1", "央视一套": "cctv1",
-        "中央二套": "cctv2", "中央三套": "cctv3", "中央四套": "cctv4",
-        "中央五套": "cctv5", "中央五加": "cctv5+", "cctv5+": "cctv5+",
-        "中央六套": "cctv6", "中央七套": "cctv7", "中央八套": "cctv8",
-        "中央九套": "cctv9", "中央十套": "cctv10", "中央十一套": "cctv11",
-        "中央十二套": "cctv12", "中央十三套": "cctv13", "中央十四套": "cctv14",
-        "中央十五套": "cctv15", "中央十六套": "cctv16", "中央十七套": "cctv17",
+    n = re.sub(r"(hd|sd|4k|8k|fhd|uhd|1080p|720p|576i|1080i|600p|综合|财经|综艺|中文国际|体育|电影|国防军事|电视剧|纪录|科教|戏曲|社会与法|新闻|少儿|音乐|奥林匹克|农业农村)$", "", n, flags=re.I)
+
+    # CCTV+ 1 / CCTV+2（新闻频道，与 CCTV-1 不同）
+    m = re.search(r"cctv\+(\d+)", n)
+    if m:
+        return "cctvplus" + m.group(1)
+
+    # CCTV5+ / CCTV-5+
+    if re.search(r"cctv5\+|cctv\-?5\+", raw.lower().replace(" ", "")):
+        return "cctv5plus"
+
+    # 普通 CCTV 数字
+    m = re.search(r"cctv(\d{1,2})", n)
+    if m:
+        return "cctv" + str(int(m.group(1)))  # cctv01 → cctv1，统一数字
+
+    # 中央X套
+    cn_map = {
+        "一套": "1", "一台": "1", "二套": "2", "三套": "3", "四套": "4",
+        "五套": "5", "六套": "6", "七套": "7", "八套": "8", "九套": "9",
+        "十套": "10", "十一套": "11", "十二套": "12", "十三套": "13",
+        "十四套": "14", "十五套": "15", "十六套": "16", "十七套": "17",
     }
-    for k, v in repl.items():
-        if k in n:
-            n = v
-            break
-    n = n.replace("cctv-1", "cctv1").replace("cctv－1", "cctv1")
+    for k, v in cn_map.items():
+        if k in raw:
+            return "cctv" + v
+
     return n
 
 def fetch_bytes(url: str, timeout: int = TIMEOUT) -> Optional[bytes]:
@@ -374,12 +389,28 @@ def main() -> None:
         key = normalize_name(ch.name)
         if key in seen_name:
             continue
-        seen_url.add(ch.url)
-        seen_name.add(key)
-        unique.append(ch)
+        # 统一央视显示名
+        m = re.fullmatch(r"cctv(\d{1,2})", key)
+        if m:
+            ch.name = f"CCTV-{int(m.group(1))}"
+        elif key == "cctv5plus":
+            ch.name = "CCTV-5+"
+        elif key.startswith("cctvplus"):
+            ch.name = "CCTV+" + key.replace("cctvplus", "")
+
+    def natural_key(s: str):
+        # 把字符串拆成「文字 / 数字」交替，数字按数值比
+        parts = re.split(r"(\d+)", s.lower())
+        key = []
+        for p in parts:
+            if p.isdigit():
+                key.append((0, int(p)))
+            else:
+                key.append((1, p))
+        return key
 
     rank = {g: i for i, g in enumerate(GROUP_ORDER)}
-    unique.sort(key=lambda c: (rank.get(c.group, 99), c.name))
+    unique.sort(key=lambda c: (rank.get(c.group, 99), natural_key(c.name)))
 
     ipv4 = [c for c in unique if not c.is_ipv6]
     ipv6 = [c for c in unique if c.is_ipv6]
