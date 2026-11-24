@@ -1,0 +1,6 @@
+# 直播源列表（M3U / TXT）
+# 格式：名称|URL   或  仅 URL
+# 以 # 开头的行为注释
+
+中国|https://iptv-org.github.io/iptv/countries/cn.m3u
+中文|https://iptv-org.github.io/iptv/languages/zho.m3u
