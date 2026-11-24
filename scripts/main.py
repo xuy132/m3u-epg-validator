@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""m3u-epg-validator: 订阅测活 + 分组 + 按名去重 + 自然排序"""
+"""m3u-epg-validator: 订阅测活 + 分组 + 按名去重 + 自然排序
+修改说明：
+- CCTV+ 显示为「CCTV+新闻N」，避免与 CCTV-1 混淆
+- 支持同名多线路（KEEP_MULTI_LINE=True，默认最多 3 条）
+"""
 from __future__ import annotations
 import concurrent.futures, gzip, ipaddress, re, time, urllib.request
 from dataclasses import dataclass
@@ -20,6 +24,10 @@ CONCURRENCY, TIMEOUT, EPG_TIMEOUT = 40, 8, 30
 MAX_CHANNELS_PER_SOURCE = 2000
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 RAW_BASE = "https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output"
+
+# 同名多线路开关：True=最多保留 MAX_LINES_PER_CHANNEL 条不同 URL；False=只留最快 1 条
+KEEP_MULTI_LINE = True
+MAX_LINES_PER_CHANNEL = 3
 
 JUNK_PATTERNS = [r"^更新时间", r"^更新$", r"关于本源", r"^声明", r"^公告", r"^\d{4}[-/年]\d{1,2}"]
 
@@ -136,13 +144,14 @@ def normalize_name(name: str) -> str:
     return n
 
 def display_name(key: str, original: str) -> str:
+    """统一显示名。CCTV+ 写成 CCTV+新闻N，避免和 CCTV-1 混淆。"""
     m = re.fullmatch(r"cctv(\d{1,2})", key)
     if m:
         return f"CCTV-{int(m.group(1))}"
     if key == "cctv5plus":
         return "CCTV-5+"
     if key.startswith("cctvplus"):
-        return "CCTV+" + key.replace("cctvplus", "")
+        return "CCTV+新闻" + key.replace("cctvplus", "")
     return original
 
 def natural_key(s: str):
@@ -348,18 +357,32 @@ def main() -> None:
                 alive.append(r)
     print(f"测活通过: {len(alive)}")
 
+    # ---------- 去重 + 统一显示名 + 可选多线路 ----------
     seen_url: Set[str] = set()
-    seen_name: Set[str] = set()
+    name_count: dict = {}  # normalize_key -> 已保留条数
     unique: List[Channel] = []
+
     for ch in sorted(alive, key=lambda c: c.latency_ms):
         if ch.url in seen_url:
             continue
         key = normalize_name(ch.name)
-        if key in seen_name:
-            continue
+        base = display_name(key, ch.name)
+        count = name_count.get(key, 0)
+
+        if KEEP_MULTI_LINE:
+            if count >= MAX_LINES_PER_CHANNEL:
+                continue
+            if count == 0:
+                ch.name = base
+            else:
+                ch.name = f"{base}·线路{count + 1}"
+        else:
+            if count >= 1:
+                continue
+            ch.name = base
+
         seen_url.add(ch.url)
-        seen_name.add(key)
-        ch.name = display_name(key, ch.name)
+        name_count[key] = count + 1
         unique.append(ch)
 
     rank = {g: i for i, g in enumerate(GROUP_ORDER)}
