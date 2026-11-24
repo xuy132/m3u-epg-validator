@@ -1,0 +1,3 @@
+# EPG 节目单地址（XMLTV）
+https://epg.pw/xmltv/epg_CN.xml
+https://live.fanmingming.cn/e.xml
