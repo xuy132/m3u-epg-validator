@@ -226,11 +226,42 @@ def main() -> None:
             r = fut.result()
             if r: alive.append(r)
     print(f"测活通过: {len(alive)} / {len(all_cands)}")
-    seen: Set[str] = set()
+    def normalize_name(name: str) -> str:
+        """把 CCTV-1 / CCTV1 / 中央一套 等归一成同一键，避免重复"""
+        n = name.strip().lower()
+        n = re.sub(r"[\s\-_·•]+", "", n)
+        n = re.sub(r"[\(（].*?[\)）]", "", n)  # 去掉 (1080p) 等
+        n = re.sub(r"(hd|sd|4k|8k|fhd|uhd|1080p|720p|576i|1080i)$", "", n)
+        # 常见央视别名
+        replacements = {
+            "中央一套": "cctv1", "中央一台": "cctv1", "央视一套": "cctv1",
+            "中央二套": "cctv2", "中央三套": "cctv3", "中央四套": "cctv4",
+            "中央五套": "cctv5", "中央五加": "cctv5+", "cctv5+": "cctv5+",
+            "中央六套": "cctv6", "中央七套": "cctv7", "中央八套": "cctv8",
+            "中央九套": "cctv9", "中央十套": "cctv10", "中央十一套": "cctv11",
+            "中央十二套": "cctv12", "中央十三套": "cctv13", "中央十四套": "cctv14",
+            "中央十五套": "cctv15", "中央十六套": "cctv16", "中央十七套": "cctv17",
+        }
+        for k, v in replacements.items():
+            if k in n:
+                n = v
+                break
+        n = n.replace("cctv-1", "cctv1").replace("cctv－1", "cctv1")
+        return n
+
+    seen_url: Set[str] = set()
+    seen_name: Set[str] = set()
     unique: List[Channel] = []
+    # 先按延迟从低到高，同名只留第一条（最快的）
     for ch in sorted(alive, key=lambda c: c.latency_ms):
-        if ch.url in seen: continue
-        seen.add(ch.url); unique.append(ch)
+        if ch.url in seen_url:
+            continue
+        key = normalize_name(ch.name)
+        if key in seen_name:
+            continue
+        seen_url.add(ch.url)
+        seen_name.add(key)
+        unique.append(ch)
     ipv4 = [c for c in unique if not c.is_ipv6]
     ipv6 = [c for c in unique if c.is_ipv6]
     print(f"去重后: 总计 {len(unique)} | IPv4 {len(ipv4)} | IPv6 {len(ipv6)}")
