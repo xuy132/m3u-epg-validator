@@ -1,0 +1,4 @@
+# 可直接复制到 libretv-aggregate 的 config/live_sources.txt
+聚合直播(全部)|https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/epg/result.m3u|http://epg.51zmt.top:8000/e.xml.gz
+聚合直播(IPv4)|https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/epg/ipv4/result.m3u|http://epg.51zmt.top:8000/e.xml.gz
+聚合直播(IPv6)|https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/epg/ipv6/result.m3u|http://epg.51zmt.top:8000/e.xml.gz
