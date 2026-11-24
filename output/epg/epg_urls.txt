@@ -1,0 +1,4 @@
+https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output/epg/e.xml.gz
+https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output/epg/pp.xml
+https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output/epg/epg_CN.xml
+https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output/epg/e.xml
