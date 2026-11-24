@@ -2,7 +2,7 @@
 """m3u-epg-validator: 订阅测活 + 分组 + 按名去重 + 自然排序
 修改说明：
 - CCTV+ 显示为「CCTV+新闻N」，避免与 CCTV-1 混淆
-- 支持同名多线路（KEEP_MULTI_LINE=True，默认最多 3 条）
+- 支持同名多线路（KEEP_MULTI_LINE=True，默认最多 2 条）
 """
 from __future__ import annotations
 import concurrent.futures, gzip, ipaddress, re, time, urllib.request
@@ -27,7 +27,7 @@ RAW_BASE = "https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/outp
 
 # 同名多线路开关：True=最多保留 MAX_LINES_PER_CHANNEL 条不同 URL；False=只留最快 1 条
 KEEP_MULTI_LINE = True
-MAX_LINES_PER_CHANNEL = 3
+MAX_LINES_PER_CHANNEL = 2
 
 JUNK_PATTERNS = [r"^更新时间", r"^更新$", r"关于本源", r"^声明", r"^公告", r"^\d{4}[-/年]\d{1,2}"]
 
