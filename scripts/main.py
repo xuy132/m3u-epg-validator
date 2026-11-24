@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""
-m3u-epg-validator
-- subscribe.txt 订阅源 → 测活 → 按名去重
-- groups.txt 控制分组（MV/轮播保留并单独成组）
-- 只过滤真正的说明项（更新时间、关于本源等），不删 MV/轮播
-"""
+"""m3u-epg-validator: 订阅测活 + 分组 + 按名去重 + 自然排序"""
 from __future__ import annotations
 import concurrent.futures, gzip, ipaddress, re, time, urllib.request
 from dataclasses import dataclass
@@ -15,64 +10,29 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG, OUTPUT = ROOT / "config", ROOT / "output"
 SUBSCRIBE_FILE = CONFIG / "subscribe.txt"
+SOURCES_FALLBACK = CONFIG / "sources.txt"
 EPG_FILE = CONFIG / "epg.txt"
 BLACKLIST_FILE = CONFIG / "blacklist.txt"
 WHITELIST_FILE = CONFIG / "whitelist.txt"
 GROUPS_FILE = CONFIG / "groups.txt"
 
-CONCURRENCY, TIMEOUT, EPG_TIMEOUT = 30, 8, 30
-MAX_CHANNELS_PER_SOURCE = 800
+CONCURRENCY, TIMEOUT, EPG_TIMEOUT = 40, 8, 30
+MAX_CHANNELS_PER_SOURCE = 2000
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 RAW_BASE = "https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output"
 
-# 仅过滤说明/垃圾项，不碰 MV、轮播、电影
-JUNK_NAME_PATTERNS = [
-    r"^更新时间", r"^更新$", r"关于本源", r"^声明", r"^公告", r"^说明$",
-    r"^[\d]{4}[-/年]\d{1,2}[-/月]\d{1,2}",  # 纯日期当频道名
-]
+JUNK_PATTERNS = [r"^更新时间", r"^更新$", r"关于本源", r"^声明", r"^公告", r"^\d{4}[-/年]\d{1,2}"]
 
-# 分组展示顺序
 GROUP_ORDER = [
-    "📺央视频道",
-    "📡卫视频道",
-    "🇭🇰港澳台",
-    "🔁轮播影院",
-    "🎵MV点播",
-    "⚽体育频道",
-    "🧸少儿频道",
-    "☘️浙江频道",
-    "☘️江西频道",
-    "☘️广东频道",
-    "☘️福建频道",
-    "☘️上海频道",
-    "☘️北京频道",
-    "☘️江苏频道",
-    "☘️湖南频道",
-    "☘️四川频道",
-    "☘️湖北频道",
-    "☘️河南频道",
-    "☘️山东频道",
-    "☘️河北频道",
-    "☘️安徽频道",
-    "☘️辽宁频道",
-    "☘️吉林频道",
-    "☘️黑龙江频道",
-    "☘️陕西频道",
-    "☘️山西频道",
-    "☘️重庆频道",
-    "☘️天津频道",
-    "☘️云南频道",
-    "☘️贵州频道",
-    "☘️广西频道",
-    "☘️海南频道",
-    "☘️内蒙古频道",
-    "☘️新疆频道",
-    "☘️西藏频道",
-    "☘️宁夏频道",
-    "☘️青海频道",
-    "☘️甘肃频道",
-    "📍地方综合",
-    "📂其他频道",
+    "📺央视频道", "📡卫视频道", "🇭🇰港澳台", "🔁轮播影院", "🎵MV点播",
+    "⚽体育频道", "🧸少儿频道",
+    "☘️浙江频道", "☘️江西频道", "☘️广东频道", "☘️福建频道", "☘️上海频道",
+    "☘️北京频道", "☘️江苏频道", "☘️湖南频道", "☘️四川频道", "☘️湖北频道",
+    "☘️河南频道", "☘️山东频道", "☘️河北频道", "☘️安徽频道", "☘️辽宁频道",
+    "☘️吉林频道", "☘️黑龙江频道", "☘️陕西频道", "☘️山西频道", "☘️重庆频道",
+    "☘️天津频道", "☘️云南频道", "☘️贵州频道", "☘️广西频道", "☘️海南频道",
+    "☘️内蒙古频道", "☘️新疆频道", "☘️西藏频道", "☘️宁夏频道", "☘️青海频道",
+    "☘️甘肃频道", "📍地方综合", "📂其他频道",
 ]
 
 @dataclass
@@ -99,8 +59,9 @@ def load_lines(path: Path) -> List[str]:
             if ln.strip() and not ln.strip().startswith("#")]
 
 def load_subscribe() -> List[SourceEntry]:
+    path = SUBSCRIBE_FILE if SUBSCRIBE_FILE.exists() else SOURCES_FALLBACK
     entries = []
-    for line in load_lines(SUBSCRIBE_FILE):
+    for line in load_lines(path):
         if "|" in line:
             name, url = [x.strip() for x in line.split("|", 1)]
         else:
@@ -117,7 +78,6 @@ def load_keywords(path: Path) -> Set[str]:
     return {kw.lower() for kw in load_lines(path)}
 
 def load_group_rules() -> List[Tuple[str, str]]:
-    """groups.txt → [(关键词, 分组名), ...] 从上到下优先"""
     rules = []
     for line in load_lines(GROUPS_FILE):
         if "|" not in line:
@@ -127,17 +87,14 @@ def load_group_rules() -> List[Tuple[str, str]]:
             rules.append((key, group))
     return rules
 
-def match_keywords(text: str, keywords: Set[str]) -> bool:
+def match_kw(text: str, kws: Set[str]) -> bool:
     t = text.lower()
-    return any(kw in t for kw in keywords)
+    return any(k in t for k in kws)
 
-def is_junk_name(name: str) -> bool:
-    for p in JUNK_NAME_PATTERNS:
-        if re.search(p, name, re.I):
-            return True
-    return False
+def is_junk(name: str) -> bool:
+    return any(re.search(p, name, re.I) for p in JUNK_PATTERNS)
 
-def detect_ipv6_from_url(url: str) -> bool:
+def detect_ipv6(url: str) -> bool:
     try:
         host = urlparse(url).hostname or ""
         if host.startswith("[") and host.endswith("]"):
@@ -146,47 +103,54 @@ def detect_ipv6_from_url(url: str) -> bool:
     except ValueError:
         return False
 
-def classify_group(name: str, rules: List[Tuple[str, str]]) -> str:
+def classify(name: str, rules: List[Tuple[str, str]]) -> str:
     for key, group in rules:
         if key.lower() in name.lower():
             return group
     return "📂其他频道"
 
 def normalize_name(name: str) -> str:
-    """CCTV1 / CCTV-1 / CCTV-1 HD / CCTV1综合 → 同一键；CCTV+1 单独；CCTV5+ 单独"""
     raw = name.strip()
     n = raw.lower()
-    n = re.sub(r"\[.*?\]", "", n)                 # [Not 24/7]
-    n = re.sub(r"[\(（].*?[\)）]", "", n)         # (1080p)
+    n = re.sub(r"\[.*?\]", "", n)
+    n = re.sub(r"[\(（].*?[\)）]", "", n)
     n = re.sub(r"[\s\-_·•]+", "", n)
-    n = re.sub(r"(hd|sd|4k|8k|fhd|uhd|1080p|720p|576i|1080i|600p|综合|财经|综艺|中文国际|体育|电影|国防军事|电视剧|纪录|科教|戏曲|社会与法|新闻|少儿|音乐|奥林匹克|农业农村)$", "", n, flags=re.I)
-
-    # CCTV+ 1 / CCTV+2（新闻频道，与 CCTV-1 不同）
+    n = re.sub(
+        r"(hd|sd|4k|8k|fhd|uhd|1080p|720p|576i|1080i|600p|综合|财经|综艺|中文国际|体育|电影|国防军事|电视剧|纪录|科教|戏曲|社会与法|新闻|少儿|音乐|奥林匹克|农业农村)$",
+        "", n, flags=re.I,
+    )
     m = re.search(r"cctv\+(\d+)", n)
     if m:
         return "cctvplus" + m.group(1)
-
-    # CCTV5+ / CCTV-5+
     if re.search(r"cctv5\+|cctv\-?5\+", raw.lower().replace(" ", "")):
         return "cctv5plus"
-
-    # 普通 CCTV 数字
     m = re.search(r"cctv(\d{1,2})", n)
     if m:
-        return "cctv" + str(int(m.group(1)))  # cctv01 → cctv1，统一数字
-
-    # 中央X套
-    cn_map = {
-        "一套": "1", "一台": "1", "二套": "2", "三套": "3", "四套": "4",
-        "五套": "5", "六套": "6", "七套": "7", "八套": "8", "九套": "9",
-        "十套": "10", "十一套": "11", "十二套": "12", "十三套": "13",
-        "十四套": "14", "十五套": "15", "十六套": "16", "十七套": "17",
-    }
-    for k, v in cn_map.items():
+        return "cctv" + str(int(m.group(1)))
+    cn = {"一套": "1", "一台": "1", "二套": "2", "三套": "3", "四套": "4", "五套": "5",
+          "六套": "6", "七套": "7", "八套": "8", "九套": "9", "十套": "10", "十一套": "11",
+          "十二套": "12", "十三套": "13", "十四套": "14", "十五套": "15", "十六套": "16", "十七套": "17"}
+    for k, v in cn.items():
         if k in raw:
             return "cctv" + v
-
     return n
+
+def display_name(key: str, original: str) -> str:
+    m = re.fullmatch(r"cctv(\d{1,2})", key)
+    if m:
+        return f"CCTV-{int(m.group(1))}"
+    if key == "cctv5plus":
+        return "CCTV-5+"
+    if key.startswith("cctvplus"):
+        return "CCTV+" + key.replace("cctvplus", "")
+    return original
+
+def natural_key(s: str):
+    parts = re.split(r"(\d+)", s.lower())
+    out = []
+    for p in parts:
+        out.append((0, int(p)) if p.isdigit() else (1, p))
+    return out
 
 def fetch_bytes(url: str, timeout: int = TIMEOUT) -> Optional[bytes]:
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
@@ -208,7 +172,7 @@ def fetch_text(url: str, timeout: int = TIMEOUT) -> Optional[str]:
             pass
     return data.decode("utf-8", errors="ignore")
 
-def download_epg_files(epg_urls: List[str]) -> List[str]:
+def download_epg(epg_urls: List[str]) -> List[str]:
     epg_dir = OUTPUT / "epg"
     epg_dir.mkdir(parents=True, exist_ok=True)
     usable = []
@@ -222,12 +186,12 @@ def download_epg_files(epg_urls: List[str]) -> List[str]:
         if not name.endswith((".xml", ".gz", ".xml.gz")):
             name = f"epg_{i}.xml"
         (epg_dir / name).write_bytes(data)
-        print(f"  已保存: {name} ({len(data)/1024:.1f} KB)")
+        print(f"  已保存: {name}")
         usable.append(f"{RAW_BASE}/epg/{name}")
     (epg_dir / "epg_urls.txt").write_text("\n".join(usable) + "\n", encoding="utf-8")
     return usable
 
-def parse_m3u(content: str, source_name: str, blacklist: Set[str], whitelist: Set[str], rules: List[Tuple[str, str]]) -> List[Channel]:
+def parse_m3u(content, source_name, blacklist, whitelist, rules) -> List[Channel]:
     channels, lines, i = [], content.splitlines(), 0
     while i < len(lines):
         line = lines[i].strip()
@@ -246,21 +210,21 @@ def parse_m3u(content: str, source_name: str, blacklist: Set[str], whitelist: Se
             if not url.startswith(("http://", "https://")):
                 i += 1
                 continue
-            if is_junk_name(name) or match_keywords(name, blacklist) or match_keywords(url, blacklist):
+            if is_junk(name) or match_kw(name, blacklist) or match_kw(url, blacklist):
                 i += 1
                 continue
-            if whitelist and not (match_keywords(name, whitelist) or match_keywords(url, whitelist)):
+            if whitelist and not (match_kw(name, whitelist) or match_kw(url, whitelist)):
                 i += 1
                 continue
             channels.append(Channel(
-                name=name, url=url, group=classify_group(name, rules),
+                name=name, url=url, group=classify(name, rules),
                 tvg_id=tvg_id, tvg_name=tvg_name, tvg_logo=tvg_logo,
-                source_name=source_name, is_ipv6=detect_ipv6_from_url(url),
+                source_name=source_name, is_ipv6=detect_ipv6(url),
             ))
         i += 1
     return channels
 
-def parse_txt(content: str, source_name: str, blacklist: Set[str], whitelist: Set[str], rules: List[Tuple[str, str]]) -> List[Channel]:
+def parse_txt(content, source_name, blacklist, whitelist, rules) -> List[Channel]:
     channels = []
     for line in content.splitlines():
         line = line.strip()
@@ -271,13 +235,13 @@ def parse_txt(content: str, source_name: str, blacklist: Set[str], whitelist: Se
         name, url = [x.strip() for x in line.split(",", 1)]
         if not url.startswith(("http://", "https://")):
             continue
-        if is_junk_name(name) or match_keywords(name, blacklist) or match_keywords(url, blacklist):
+        if is_junk(name) or match_kw(name, blacklist) or match_kw(url, blacklist):
             continue
-        if whitelist and not (match_keywords(name, whitelist) or match_keywords(url, whitelist)):
+        if whitelist and not (match_kw(name, whitelist) or match_kw(url, whitelist)):
             continue
         channels.append(Channel(
-            name=name, url=url, group=classify_group(name, rules),
-            source_name=source_name, is_ipv6=detect_ipv6_from_url(url),
+            name=name, url=url, group=classify(name, rules),
+            source_name=source_name, is_ipv6=detect_ipv6(url),
         ))
     return channels
 
@@ -346,12 +310,16 @@ def main() -> None:
     whitelist = load_keywords(WHITELIST_FILE)
     rules = load_group_rules()
     print(f"订阅源: {len(sources)} | EPG: {len(epg_urls)} | 分组规则: {len(rules)}")
-
-    saved_epg = download_epg_files(epg_urls) if epg_urls else []
     if not sources:
-        print("警告: subscribe.txt 为空")
+        print("错误: 没有订阅源！请创建 config/subscribe.txt")
+        for p in [OUTPUT/"result.m3u", OUTPUT/"result.txt",
+                  OUTPUT/"ipv4"/"result.m3u", OUTPUT/"ipv4"/"result.txt",
+                  OUTPUT/"ipv6"/"result.m3u", OUTPUT/"ipv6"/"result.txt"]:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text("#EXTM3U\n" if p.suffix == ".m3u" else "", encoding="utf-8")
         return
 
+    saved_epg = download_epg(epg_urls) if epg_urls else []
     all_cands: List[Channel] = []
     for src in sources:
         print(f"拉取: {src.name} -> {src.url}")
@@ -373,7 +341,7 @@ def main() -> None:
         done = 0
         for fut in concurrent.futures.as_completed(futs):
             done += 1
-            if done % 50 == 0 or done == len(all_cands):
+            if done % 100 == 0 or done == len(all_cands):
                 print(f"  测活: {done}/{len(all_cands)}")
             r = fut.result()
             if r:
@@ -389,25 +357,10 @@ def main() -> None:
         key = normalize_name(ch.name)
         if key in seen_name:
             continue
-        # 统一央视显示名
-        m = re.fullmatch(r"cctv(\d{1,2})", key)
-        if m:
-            ch.name = f"CCTV-{int(m.group(1))}"
-        elif key == "cctv5plus":
-            ch.name = "CCTV-5+"
-        elif key.startswith("cctvplus"):
-            ch.name = "CCTV+" + key.replace("cctvplus", "")
-
-    def natural_key(s: str):
-        # 把字符串拆成「文字 / 数字」交替，数字按数值比
-        parts = re.split(r"(\d+)", s.lower())
-        key = []
-        for p in parts:
-            if p.isdigit():
-                key.append((0, int(p)))
-            else:
-                key.append((1, p))
-        return key
+        seen_url.add(ch.url)
+        seen_name.add(key)
+        ch.name = display_name(key, ch.name)
+        unique.append(ch)
 
     rank = {g: i for i, g in enumerate(GROUP_ORDER)}
     unique.sort(key=lambda c: (rank.get(c.group, 99), natural_key(c.name)))
@@ -426,13 +379,10 @@ def main() -> None:
     epg0 = saved_epg[0] if saved_epg else (epg_urls[0] if epg_urls else "")
     (OUTPUT / "live_sources_for_libretv.txt").write_text(
         "\n".join([
-            "# 复制到 libretv-aggregate 的 config/live_sources.txt",
             f"聚合全部|{RAW_BASE}/result.m3u|{epg0}",
             f"聚合IPv4|{RAW_BASE}/ipv4/result.m3u|{epg0}",
             f"聚合IPv6|{RAW_BASE}/ipv6/result.m3u|{epg0}",
-        ]) + "\n",
-        encoding="utf-8",
-    )
+        ]) + "\n", encoding="utf-8")
     print("=== 完成 ===")
 
 if __name__ == "__main__":
