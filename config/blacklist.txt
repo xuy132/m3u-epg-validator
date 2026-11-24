@@ -8,3 +8,9 @@ adult
 色情
 iesdouyin
 about
+CCTV+ 1
+CCTV+ 2
+CCTV+1
+CCTV+2
+CCTVPlus1
+CCTVPlus2
