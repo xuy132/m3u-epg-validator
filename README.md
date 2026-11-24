@@ -6,47 +6,46 @@
 
 ## 目录结构
 m3u-epg-validator/
+config/
 
-├── .github/workflows/update.yml   # 每天自动运行
+subscribe.txt   # 直播源
 
-├── config/
+epg.txt         # EPG（会下载到 output/epg/）
 
-│   ├── sources.txt                # 直播源（M3U/TXT）地址
+blacklist.txt
 
-│   ├── epg.txt                    # EPG 地址
+whitelist.txt
 
-│   └── blacklist.txt              # 黑名单关键字
+scripts/main.py
 
-├── scripts/
+output/
 
-│   └── main.py                    # 核心脚本
+result.m3u / result.txt
 
-├── epg/                           # 结果目录（自动生成）
+ipv4/result.m3u / result.txt
 
-│   ├── result.m3u
+ipv6/result.m3u / result.txt
 
-│   ├── result.txt
+epg/            # 下载的 EPG 文件
+ README.md
 
-│   ├── ipv4/
 
-│   └── ipv6/
-
-└── README.md
-
-## 订阅地址（跑完 Actions 后可用）
+## 订阅地址（Actions 跑完后）
 
 | 类型 | 地址 |
 |------|------|
-| 全部 | `https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/epg/result.m3u` |
-| IPv4 | `https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/epg/ipv4/result.m3u` |
-| IPv6 | `https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/epg/ipv6/result.m3u` |
+| 全部 m3u | https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output/result.m3u |
+| 全部 txt | https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output/result.txt |
+| IPv4 | https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output/ipv4/result.m3u |
+| IPv6 | https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output/ipv6/result.m3u |
+
+
 
 ## 给 libretv-aggregate 使用
 
-在 [libretv-aggregate](https://github.com/xuy132/libretv-aggregate) 的 `config/live_sources.txt` 中添加：
-聚合直播|[raw.githubusercontent.com/xuy132/m3u-epg-validator/main/epg/result.m3u%7Chttps://epg.pw/xmltv/epg_CN.xml](https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/epg/result.m3u%7Chttps://epg.pw/xmltv/epg_CN.xml)
-聚合IPv4|[raw.githubusercontent.com/xuy132/m3u-epg-validator/main/epg/ipv4/result.m3u%7Chttps://epg.pw/xmltv/epg_CN.xml](https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/epg/ipv4/result.m3u%7Chttps://epg.pw/xmltv/epg_CN.xml)
-聚合IPv6|[raw.githubusercontent.com/xuy132/m3u-epg-validator/main/epg/ipv6/result.m3u%7Chttps://epg.pw/xmltv/epg_CN.xml](https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/epg/ipv6/result.m3u%7Chttps://epg.pw/xmltv/epg_CN.xml)
+聚合全部|[raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output/result.m3u%7Chttp://epg.51zmt.top:8000/e.xml.gz](https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output/result.m3u%7Chttp://epg.51zmt.top:8000/e.xml.gz)
+聚合IPv4|[raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output/ipv4/result.m3u%7Chttp://epg.51zmt.top:8000/e.xml.gz](https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output/ipv4/result.m3u%7Chttp://epg.51zmt.top:8000/e.xml.gz)
+聚合IPv6|[raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output/ipv6/result.m3u%7Chttp://epg.51zmt.top:8000/e.xml.gz](https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output/ipv6/result.m3u%7Chttp://epg.51zmt.top:8000/e.xml.gz)
 
 ## 免责声明
 
