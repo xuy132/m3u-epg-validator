@@ -41,6 +41,102 @@ CETV|📺央视频道
 
 # ---------- 2. 卫视 ----------
 卫视|📡卫视频道
+# ---------- 2.5 拼音 / 英文地名映射（解决 iptv-org 等源变成拼音后进「其他」的问题）----------
+# 省份拼音 + 常见英文写法，优先匹配到对应地方频道
+Anhui|☘️安徽频道
+Anhui TV|☘️安徽频道
+Beijing|☘️北京频道
+Beijing TV|☘️北京频道
+BTV|☘️北京频道
+Chongqing|☘️重庆频道
+Chongqing TV|☘️重庆频道
+Fujian|☘️福建频道
+Fujian TV|☘️福建频道
+Gansu|☘️甘肃频道
+Gansu TV|☘️甘肃频道
+Guangdong|☘️广东频道
+Guangdong TV|☘️广东频道
+Guangxi|☘️广西频道
+Guangxi TV|☘️广西频道
+Guizhou|☘️贵州频道
+Guizhou TV|☘️贵州频道
+Hainan|☘️海南频道
+Hainan TV|☘️海南频道
+Hebei|☘️河北频道
+Hebei TV|☘️河北频道
+Heilongjiang|☘️黑龙江频道
+Heilongjiang TV|☘️黑龙江频道
+Henan|☘️河南频道
+Henan TV|☘️河南频道
+Hubei|☘️湖北频道
+Hubei TV|☘️湖北频道
+Hunan|☘️湖南频道
+Hunan TV|☘️湖南频道
+Jiangsu|☘️江苏频道
+Jiangsu TV|☘️江苏频道
+Jiangxi|☘️江西频道
+Jiangxi TV|☘️江西频道
+Jilin|☘️吉林频道
+Jilin TV|☘️吉林频道
+Liaoning|☘️辽宁频道
+Liaoning TV|☘️辽宁频道
+Nei Monggol|☘️内蒙古频道
+NeiMonggol|☘️内蒙古频道
+Neimenggu|☘️内蒙古频道
+Inner Mongolia|☘️内蒙古频道
+Ningxia|☘️宁夏频道
+Ningxia TV|☘️宁夏频道
+Qinghai|☘️青海频道
+Qinghai TV|☘️青海频道
+Shaanxi|☘️陕西频道
+Shaanxi TV|☘️陕西频道
+Shanxi|☘️山西频道
+Shanxi TV|☘️山西频道
+Shandong|☘️山东频道
+Shandong TV|☘️山东频道
+Shanghai|☘️上海频道
+Shanghai TV|☘️上海频道
+Sichuan|☘️四川频道
+Sichuan TV|☘️四川频道
+Tianjin|☘️天津频道
+Tianjin TV|☘️天津频道
+Xinjiang|☘️新疆频道
+Xinjiang TV|☘️新疆频道
+Xizang|☘️西藏频道
+Xizang TV|☘️西藏频道
+Tibet|☘️西藏频道
+Yunnan|☘️云南频道
+Yunnan TV|☘️云南频道
+Zhejiang|☘️浙江频道
+Zhejiang TV|☘️浙江频道
+# 常见地级市 / 地区拼音
+Baicheng|📍地方综合
+Chaozhou|☘️广东频道
+Chifeng|☘️内蒙古频道
+Chuxiong|☘️云南频道
+Siping|☘️吉林频道
+Yichang|☘️湖北频道
+Sanxia|☘️湖北频道
+# 海外中文 / 宗教 / 专题（归入港澳台或其它更合适的组）
+LLBN|🇭🇰港澳台
+NTD|🇭🇰港澳台
+NTD TV|🇭🇰港澳台
+Peace TV|🇭🇰港澳台
+Supreme Master|🇭🇰港澳台
+VoA|🇭🇰港澳台
+VOA|🇭🇰港澳台
+Angel TV|🇭🇰港澳台
+CGNTV|🇭🇰港澳台
+DAAI|🇭🇰港澳台
+Beautiful Life|🇭🇰港澳台
+Taiwan Indigenous|🇭🇰港澳台
+TTV News|🇭🇰港澳台
+TV BRICS|📍地方综合
+WXTV|🇭🇰港澳台
+Pet Club|📂其他频道
+Love Nature|📂其他频道
+QTV-|📍地方综合
+QTV|📍地方综合
 
 # ---------- 3. 港澳台（台名 + 地区）----------
 澳门|🇭🇰港澳台
