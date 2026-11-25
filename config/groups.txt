@@ -215,6 +215,10 @@ Animax|🇭🇰港澳台
 Animax |🇭🇰港澳台
 Dali|🇭🇰港澳台
 Dali |🇭🇰港澳台
+Discover|🇭🇰港澳台
+Discovering|🇭🇰港澳台
+Discovery Asia|🇭🇰港澳台
+
 
 # ---------- 4. 各省地方台（放在「新闻」等通用词前面）----------
 # 浙江
