@@ -6,6 +6,7 @@
 中文|https://iptv-org.github.io/iptv/languages/zho.m3u
 IPTV-org香港|https://iptv-org.github.io/iptv/countries/hk.m3u
 IPTV-org台湾|https://iptv-org.github.io/iptv/countries/tw.m3u
+vbskycn|https://raw.githubusercontent.com/vbskycn/iptv/master/tv/iptv4.m3u
 guovin|https://guovin.github.io/iptv-api/ipv4.m3u
 Guovin-txt|https://guovin.github.io/iptv-api/result.txt
 bbxx365|https://raw.githubusercontent.com/kimwang1978/collect-txt/refs/heads/main/bbxx365.m3u
