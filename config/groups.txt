@@ -54,6 +54,7 @@ Fujian|☘️福建频道
 Fujian TV|☘️福建频道
 Gansu|☘️甘肃频道
 Gansu TV|☘️甘肃频道
+Lanzhou|☘️甘肃频道
 Guangdong|☘️广东频道
 Guangdong TV|☘️广东频道
 Guangxi|☘️广西频道
@@ -66,9 +67,12 @@ Hebei|☘️河北频道
 Hebei TV|☘️河北频道
 Heilongjiang|☘️黑龙江频道
 Heilongjiang TV|☘️黑龙江频道
+Harbin|☘️黑龙江频道
 Henan|☘️河南频道
 Henan TV|☘️河南频道
+Hebi|☘️河南频道
 Hubei|☘️湖北频道
+Jingmen|☘️湖北频道
 Hubei TV|☘️湖北频道
 Hunan|☘️湖南频道
 Hunan TV|☘️湖南频道
@@ -104,6 +108,7 @@ Xinjiang|☘️新疆频道
 Xinjiang TV|☘️新疆频道
 Xizang|☘️西藏频道
 Xizang TV|☘️西藏频道
+Kangba|☘️西藏频道
 Tibet|☘️西藏频道
 Yunnan|☘️云南频道
 Yunnan TV|☘️云南频道
@@ -112,6 +117,9 @@ Zhejiang TV|☘️浙江频道
 # 常见地级市 / 地区拼音
 Baicheng|📍地方综合
 Chaozhou|☘️广东频道
+Guangzhou TV|☘️广东频道
+Guangzhou|☘️广东频道
+Dongguan|☘️广东频道
 Chifeng|☘️内蒙古频道
 Chuxiong|☘️云南频道
 Siping|☘️吉林频道
@@ -194,6 +202,16 @@ VIU|🇭🇰港澳台
 VIU TV|🇭🇰港澳台
 VIUTV|🇭🇰港澳台
 ViuTVsix|🇭🇰港澳台
+God|🇭🇰港澳台
+God Stands |🇭🇰港澳台
+Good|🇭🇰港澳台
+Good |🇭🇰港澳台
+Cinemax|🇭🇰港澳台
+Cinemax Asia|🇭🇰港澳台
+AXN|🇭🇰港澳台
+AXN Asia|🇭🇰港澳台
+HBO|☘️广东频道
+
 
 # ---------- 4. 各省地方台（放在「新闻」等通用词前面）----------
 # 浙江
