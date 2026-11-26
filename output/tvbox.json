@@ -1,0 +1,23 @@
+{
+  "lives": [
+    {
+      "name": "聚合直播",
+      "type": 0,
+      "url": "https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output/result.txt",
+      "epg": "http://epg.51zmt.top:8000/e.xml.gz",
+      "logo": "https://live.fanmingming.com/tv/{name}.png"
+    },
+    {
+      "name": "IPv4直播",
+      "type": 0,
+      "url": "https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output/ipv4/result.txt",
+      "epg": "http://epg.51zmt.top:8000/e.xml.gz"
+    },
+    {
+      "name": "IPv6直播",
+      "type": 0,
+      "url": "https://raw.githubusercontent.com/xuy132/m3u-epg-validator/main/output/ipv6/result.txt",
+      "epg": "http://epg.51zmt.top:8000/e.xml.gz"
+    }
+  ]
+}
