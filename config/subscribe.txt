@@ -11,3 +11,4 @@ guovin|https://guovin.github.io/iptv-api/ipv4.m3u
 Guovin-txt|https://guovin.github.io/iptv-api/result.txt
 bbxx365|https://raw.githubusercontent.com/kimwang1978/collect-txt/refs/heads/main/bbxx365.m3u
 fanmingming|https://live.fanmingming.cn/tv/m3u/ipv6.m3u
+zilong7728|https://raw.githubusercontent.com/zilong7728/Collect-IPTV/main/best_sorted.m3u
