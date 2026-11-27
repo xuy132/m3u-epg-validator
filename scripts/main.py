@@ -4,9 +4,9 @@
 修改说明：
 - CCTV+ 显示为「CCTV+新闻N」，避免与 CCTV-1 混淆
 - 支持同名多线路（KEEP_MULTI_LINE=True，默认最多 2 条）
-- 分组借鉴 Collect-IPTV（优先级从高到低）：
-  1) geo 市县→省（pca-code 最长匹配）
-  2) groups.txt（繁简归一 + 最长关键词优先）
+- 分组优先级从高到低：
+  1) groups.txt（繁简归一 + 最长关键词优先）
+  2) geo 市县→省（pca-code 最长匹配，作补充）
   3) 主题智能兜底（港澳台/体育/少儿/轮播/MV）
   4) 📂其他频道
 """
@@ -169,7 +169,7 @@ def normalize_for_match(text: str) -> str:
     t = re.sub(r"[ \t\r\n\-_|·•:：,，.。/\\()\[\]【】「」'\"`]+", "", t)
     return t
 
-# 主题智能兜底（优先级低于 geo / groups.txt）
+# 主题智能兜底（优先级低于 groups.txt / geo）
 SMART_CATEGORY_RULES: List[Tuple[Tuple[str, ...], str]] = [
     (
         (
@@ -499,8 +499,8 @@ def match_geo_province(normalized_channel: str) -> Optional[str]:
 def classify(name: str, rules: List[Tuple[str, str]]) -> str:
     """
     智能分组（优先级从高到低）：
-    1. geo 市县→省 最长匹配
-    2. groups.txt：最长关键词优先；同长按 GROUP_ORDER 靠前优先
+    1. groups.txt：最长关键词优先；同长按 GROUP_ORDER 靠前优先
+    2. geo 市县→省 最长匹配（补充）
     3. 主题智能兜底（港澳台/体育/少儿/轮播/MV）
     4. 📂其他频道
     """
@@ -510,12 +510,7 @@ def classify(name: str, rules: List[Tuple[str, str]]) -> str:
     raw_lower = name.lower()
     normalized = normalize_for_match(name)
 
-    # 1) geo 市县 → 省（优先）
-    geo_group = match_geo_province(normalized)
-    if geo_group:
-        return geo_group
-
-    # 2) groups.txt：最长优先 + GROUP_ORDER
+    # 1) groups.txt：最长优先 + GROUP_ORDER（最高优先级）
     scored: List[Tuple[int, str]] = []
     for key, group in rules:
         if not key:
@@ -537,6 +532,11 @@ def classify(name: str, rules: List[Tuple[str, str]]) -> str:
         rank = {g: i for i, g in enumerate(GROUP_ORDER)}
         scored.sort(key=lambda x: (-x[0], rank.get(x[1], 99), x[1]))
         return scored[0][1]
+
+    # 2) geo 市县 → 省（补充，仅 groups.txt 未命中时）
+    geo_group = match_geo_province(normalized)
+    if geo_group:
+        return geo_group
 
     # 3) 主题兜底
     for keywords, group in _SMART_NORMALIZED:
